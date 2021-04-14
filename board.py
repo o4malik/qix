@@ -79,16 +79,9 @@ class Board():
         self.playableAreaPolygon = self.remakePlayableArea()
 
     def gameStart(self, level):
+        self.createEntities(level)
+        self.initializeFonts()
         
-        # Construct mainBoard, starting edges of traversal, and uncaptured space
-        self.mainBoard = [ (x,y) for x in range(160) for y in range(100) if 35 < x < 125 and 5 < y < 95 ]
-
-        self.edges = [ (lmao) for lmao in self.mainBoard if (lmao[0] == 36 or lmao[0] == 124) or lmao[1] == 6 or lmao[1] == 94 ]
-        self.playableEdge = copy.deepcopy(self.edges)
-
-        self.uncaptured = [losing for losing in self.mainBoard if losing not in self.edges] 
-
-        return self.createEntities(level)
 
     def createEntities(self, level):
         # Level determines number of enemy entities:
@@ -115,8 +108,6 @@ class Board():
             qix = Qix(80, 50)
             self.entities.append(qix)
 
-        return self.initializeFonts()
-
     def initializeFonts(self):  # Putting this inside the constructor will crash pygame on restart attempts
         pygame.font.init()
         self.header = pygame.font.SysFont('Terminal', 60)
@@ -126,89 +117,13 @@ class Board():
         self.scorePercent = pygame.font.SysFont('Terminal', 100)
         self.scorePercentText = self.scorePercent.render(str(self.score) + "%", True, pygame.Color('white'))
 
-    def updateEdges(self):
-        avgX = 0
-        avgY = 0
-
-        for i in self.edgesBuffer:
-            self.edges.append(i)
-            self.playableEdge.append(i)
-
-            avgX+= i[0]
-            avgY+= i[1]
-
-        avgX /= len(self.edgesBuffer)
-        avgY /= len(self.edgesBuffer)
-
-        self.edgesBuffer = []
-
-        # Set starting point for fill capture to be the average coordinates of all points in the push
-        # Straight lines and lines that average to a point belonging to the buffer will capture the whole board lol
-        return self.fillCapture(int(avgX), int(avgY))
-
-    def fillCapture(self, x,y):             # Very costly method on a 100 by 100 pixel board (5+ seconds on most captures). Hence the scaled down board size
-        self.capturedBuffer.append((x,y))   # Append Starting point
-
-        for coor in self.capturedBuffer:    # Checks adjacent points if they are captured, otherwise capture space and append to buffer
-
-            if (coor[0]+1,coor[1]) in self.uncaptured and (coor[0]+1,coor[1]) not in self.capturedBuffer:
-                self.capturedBuffer.append((coor[0]+1,coor[1]))
-                self.uncaptured.remove((coor[0]+1,coor[1]))
-            
-            if (coor[0]-1,coor[1]) in self.uncaptured and (coor[0]-1,coor[1]) not in self.capturedBuffer:
-                self.capturedBuffer.append((coor[0]-1,coor[1]))
-                self.uncaptured.remove((coor[0]-1,coor[1]))
-            
-            if (coor[0],coor[1]+1) in self.uncaptured and (coor[0],coor[1]+1) not in self.capturedBuffer:
-                self.capturedBuffer.append((coor[0],coor[1]+1))
-                self.uncaptured.remove((coor[0],coor[1]+1))
-            
-            if (coor[0],coor[1]-1) in self.uncaptured and (coor[0],coor[1]-1) not in self.capturedBuffer:
-                self.capturedBuffer.append((coor[0],coor[1]-1))
-                self.uncaptured.remove((coor[0],coor[1]-1))
-
-        for i in self.capturedBuffer:
-            self.captured.append(i)
-
-        self.capturedBuffer = []
     
-        return
-
-
-    def updatePlayable(self): 
-
-        for i in self.edges:
-            
-            # Checks if edge can be removed and is diagonally adjacent to any uncaptured space
-            if not self.checkIfEdge(i) and i in self.playableEdge:
-                self.playableEdge.remove(i)
-
-        return
-
-
-    def checkIfEdge(self, coor):
-
-        if (coor[0]+1,coor[1]+1) in self.uncaptured:
-            return True
-
-        if (coor[0]-1,coor[1]+1) in self.uncaptured:
-            return True
-
-        if (coor[0]-1,coor[1]-1) in self.uncaptured:
-            return True
-
-        if (coor[0]+1,coor[1]-1) in self.uncaptured:
-            return True
-
-        return False
-    
-
     def updateScore(self, score):  # 50% of board must be captured to win
         self.score = score
         return self.setScoreText()
     
     def setScoreText(self):
-        self.scorePercentText = self.header.render(str(self.score) + "%", True, pygame.Color('white'))
+        self.scorePercentText = self.scorePercent.render(str(self.score) + "%", True, pygame.Color('white'))
         return
 
     def getMarker(self):

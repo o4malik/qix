@@ -138,6 +138,14 @@ def main():
                         move = random.choice(moveList)
                         sparx.updateTail((move[0], move[1]))
                         sparx.updateLocation(move[0], move[1])
+                        # If the sparx is touching the start of the incursion
+                        
+                        if player.isPushing() and sparx.x == board.firstEdgeBuffer.start[0] and sparx.y == board.firstEdgeBuffer.start[1]:
+                            # Reset the player position
+                            player.updateLocation(board.firstEdgeBuffer.start[0], board.firstEdgeBuffer.start[1])
+                            player.setIsPushing(False)
+                            board.firstEdgeBuffer = None
+                            board.edgesBuffer = None
                     else:
                         gameLoop = False
                         pygame.quit()
@@ -174,7 +182,8 @@ def main():
                 qix.resetMoves()
 
             board.draw()
-
+            
+            # The player got hit
             if board.collide():
                 collisionTime = pygame.time.get_ticks()
                 player.toggleInvincibility(True)
@@ -184,6 +193,9 @@ def main():
                 player.toggleInvincibility(False)
 
             if player.getHealth() == 0:
+                pygame.quit()
+                break
+            if board.score >= 75:
                 pygame.quit()
                 break
 
@@ -297,6 +309,7 @@ def handleIncursion(player, board, moveVector, previousMoveVector, startingIncur
             board.firstEdgeBuffer = None
             board.edgesBuffer = None
             board.playableAreaPolygon = board.remakePlayableArea()
+            board.updateScore(int(round(100 - 100 * board.playableAreaPolygon.area / board.startingAreaPolygon.area)))
             print("Captured Area: ", int(round(100 - 100 * board.playableAreaPolygon.area / board.startingAreaPolygon.area)), "%")
 
 def handleCrossEdgeIncursion(touchingEdge, startingIncurringEdge, edge, board):

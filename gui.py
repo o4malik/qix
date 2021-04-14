@@ -97,9 +97,9 @@ class GUI:
 
         layout_initial = [
 
-            [sg.Text("QiX", justification='center', size=(1280, 4), font=("pixelmix bold", "40"), pad=((0, 0), (200, 0)),
+            [sg.Text("QiX", justification='center', size=(1280, 4), pad=((0, 0), (200, 0)),
                      text_color=self.text_color, background_color=self.bg_color)],
-            [sg.Text("Select Difficulty", justification='center', size=(1280, 3),font=("pixelmix bold", "12"),
+            [sg.Text("Select Difficulty", justification='center', size=(1280, 3),
                      text_color=self.text_color, background_color=self.bg_color)],
             [sg.Button("Easy", size=(15, 2), pad=((260, 45), (10, 10)),
                        button_color=(self.btn_text_color, self.btn_bg_color)),
@@ -184,7 +184,7 @@ class GUI:
 
         # Create the layout
         layout_game_over = [
-            [sg.Text(self.end_text, justification='center', size=(1280, 3),font=("pixelmix bold", "40"), pad=((0, 0), (200, 0)),
+            [sg.Text(self.end_text, justification='center', size=(1280, 3), pad=((0, 0), (200, 0)),
                      text_color=self.text_color, background_color=self.bg_color)],
             [sg.Text("Area Captured: " + str(self.user_score) + "%", justification='center', size=(1280, 3),
                      text_color=self.text_color, background_color=self.bg_color, key=self.user_score_key)],
