@@ -226,7 +226,7 @@ class GUI:
         return new_window
 
     def render_game_over_screen(self):
-        if int(self.user_score) >= 50:
+        if int(self.user_score) >= 75:
             self.end_text = "You Won"
         else:
             self.end_text = "Game Over"
