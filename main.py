@@ -10,6 +10,8 @@ from shapely.geometry.point import Point
 import copy
 import random
 
+
+from gui import GUI
 from board import Board, DIRECTION_DOWNWARDS, DIRECTION_LEFTWARDS, DIRECTION_RIGHTWARDS, DIRECTION_UPWARDS, Edge
 from boardObjects import Marker
 
@@ -19,158 +21,196 @@ from boardObjects import Marker
 # pygame.display.update()
 
 def main():
-    fpsclock=pygame.time.Clock()
 
-    level = 4
+    uiLoop = True
+    while uiLoop:
 
-    # level = int(input("Enter the you the Level you wish to play [1-4]: "))
-    # print("Entering Level {}...".format(level))
+        fpsclock=pygame.time.Clock()
 
-    print("Creating Board...")
+        gui = GUI()
 
-    board = Board()
-    board.gameStart(level)  # Calls createEntities
+        if gui.render_initial_screen():
+            level = int(gui.selected_difficulty)
+        else:
+            break
 
-    print("Start!")
+        print("Creating Board...")
 
-    # BoardObjects can only be accessed through the board
-    player = board.getMarker()
-    sparx1 = board.getSparx1()
-    sparx2 = board.getSparx2()
-    qix = board.getQix()
+        board = Board()
+        board.gameStart(level)  # Calls createEntities
 
-    sparxHolder = [sparx1,sparx2]
+        print("Start!")
 
-    collisionTime = 0
+        # BoardObjects can only be accessed through the board
+        player = board.getMarker()
+        sparx1 = board.getSparx1()
+        sparx2 = board.getSparx2()
+        qix = board.getQix()
 
-    running = True
+        sparxHolder = [sparx1,sparx2]
 
-    previousMoveVector = None
-    startingIncurringEdge = None
-    while running:
+        collisionTime = 0
+        previousMoveVector = None
+        startingIncurringEdge = None
+        exit = True
 
-        fpsclock.tick(30)
+        gameLoop = True
+        while gameLoop:
+            fpsclock.tick(30)
 
-        keys = pygame.key.get_pressed()
-        moveVector = (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT], keys[pygame.K_DOWN] - keys[pygame.K_UP])
-        moveVector = limitVectorDirection(moveVector)
-        touchingEdge = None # Start from no touchingEdge
-        
-        # If nothing is being pressed, ignore the code
-        if not moveVector == (0,0) and not keys[pygame.K_SPACE]:
+            keys = pygame.key.get_pressed()
+            moveVector = (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT], keys[pygame.K_DOWN] - keys[pygame.K_UP])
+            moveVector = limitVectorDirection(moveVector)
+            touchingEdge = None # Start from no touchingEdge
             
-            touchingEdge = currentEdge(player, board)
-            
-            if touchingEdge:
-                # The player is touching an edge
-                pass
-            
-            # Try moving in a direction
-            player.updateLocation(player.x + moveVector[0], player.y + moveVector[1])
+            # If nothing is being pressed, ignore the code
+            if not moveVector == (0,0) and not keys[pygame.K_SPACE]:
+                
+                touchingEdge = currentEdge(player, board)
+                
+                if touchingEdge:
+                    # The player is touching an edge
+                    pass
+                
+                # Try moving in a direction
+                player.updateLocation(player.x + moveVector[0], player.y + moveVector[1])
 
-            touchingEdge = currentEdge(board.getMarker(), board)
+                touchingEdge = currentEdge(board.getMarker(), board)
 
-            # If an edge was not found, revert the movement
-            if not touchingEdge:
-                player.updateLocation(player.x - moveVector[0], player.y - moveVector[1])
-                # TODO: Consider error handling here; The player should always be on an edge
+                # If an edge was not found, revert the movement
+                if not touchingEdge:
+                    player.updateLocation(player.x - moveVector[0], player.y - moveVector[1])
+                    # TODO: Consider error handling here; The player should always be on an edge
 
-        if touchingEdge and not keys[pygame.K_SPACE]:
-            board.getMarker().setIsPushing(False)
+            if touchingEdge and not keys[pygame.K_SPACE]:
+                board.getMarker().setIsPushing(False)
 
-        if keys[pygame.K_SPACE]:
-            # If the player is currently touching the edge while doing an incursion, and if the stored incursion is of length 1, initialise the environment
-            # If the player is not currently incurring, initialise the environment
-            if currentEdge(player, board) and player.isPushing() and board.edgesBuffer == board.firstEdgeBuffer\
-                or not player.isPushing():
-                player.setIsPushing(True)
+            if keys[pygame.K_SPACE]:
+                # If the player is currently touching the edge while doing an incursion, and if the stored incursion is of length 1, initialise the environment
+                # If the player is not currently incurring, initialise the environment
+                if currentEdge(player, board) and player.isPushing() and board.edgesBuffer == board.firstEdgeBuffer\
+                    or not player.isPushing():
+                    player.setIsPushing(True)
 
-                playerPos = (player.x, player.y)
-                board.edgesBuffer = Edge(playerPos, None)
+                    playerPos = (player.x, player.y)
+                    board.edgesBuffer = Edge(playerPos, None)
 
-                board.firstEdgeBuffer = board.edgesBuffer
-                previousMoveVector = moveVector
-                startingIncurringEdge = currentEdge(player, board)
-            
-            if player.isPushing():
-                handleIncursion(player, board, moveVector, previousMoveVector, startingIncurringEdge)
-                previousMoveVector = moveVector
+                    board.firstEdgeBuffer = board.edgesBuffer
+                    previousMoveVector = moveVector
+                    startingIncurringEdge = currentEdge(player, board)
+                
+                if player.isPushing():
+                    handleIncursion(player, board, moveVector, previousMoveVector, startingIncurringEdge)
+                    previousMoveVector = moveVector
 
-        # General Enemy Movement:
-        # Qix and Sparx both use a random movement algorithm
-        # 1. They will generate a movelist based on the adjacent points to their current position
-        # 2. Filter through movelist checking if a move satisfies the specific criteria
-        # 3. Choose a random move based on the moves that have been screened
 
-        # For the Sparx's
-        for sparx in sparxHolder:
+                # General Enemy Movement:
+                # Qix and Sparx both use a random movement algorithm
+                # 1. They will generate a movelist based on the adjacent points to their current position
+                # 2. Filter through movelist checking if a move satisfies the specific criteria
+                # 3. Choose a random move based on the moves that have been screened
 
-            if sparx:
-                sparx.generateMoves()
+                # For the Sparx's
+            for sparx in sparxHolder:
+
+                if sparx:
+                    sparx.generateMoves()
+                    moveList = []
+
+                    for move in sparx.possibleMoves:
+
+                        if move in sparx.tail:  # Sparx tail to prevent backtracking
+                            continue
+                        
+                        prevX = copy.deepcopy(sparx.x)
+                        prevY = copy.deepcopy(sparx.y)
+
+                        sparx.updateLocation(move[0], move[1])
+
+                        touchingEdge = currentEdge(sparx,board)
+
+                        if not touchingEdge:
+                            sparx.updateLocation(prevX, prevY)
+                        else:
+                            moveList.append(move)
+
+                    if moveList:
+                        move = random.choice(moveList)
+                        sparx.updateTail((move[0], move[1]))
+                        sparx.updateLocation(move[0], move[1])
+                    else:
+                        gameLoop = False
+                        pygame.quit()
+                        exit = False
+                        
+                    sparx.resetMoves()
+
+            if exit == False:
+                break
+
+
+            # Qix
+            if qix:
+                qix.generateMoves() # Generates moves based on the position of Rect.center
                 moveList = []
 
-                for move in sparx.possibleMoves:
+                for move in qix.possibleMoves:
+                    prevX = copy.deepcopy(qix.x)
+                    prevY = copy.deepcopy(qix.y)
 
-                    if move in sparx.tail:  # Sparx tail to prevent backtracking
-                        continue
-                    
-                    prevX = copy.deepcopy(sparx.x)
-                    prevY = copy.deepcopy(sparx.y)
+                    qix.updateLocation(move[0], move[1])
+                    touchingEdge = currentEdge(qix, board)
 
-                    sparx.updateLocation(move[0], move[1])
-
-                    touchingEdge = currentEdge(sparx,board)
-
-                    if not touchingEdge:
-                        sparx.updateLocation(prevX, prevY)
+                    if touchingEdge:
+                        qix.updateLocation(prevX, prevY)
                     else:
                         moveList.append(move)
 
                 if moveList:
                     move = random.choice(moveList)
-                    sparx.updateTail((move[0], move[1]))
-                    sparx.updateLocation(move[0], move[1]) 
-                    
-                sparx.resetMoves()
+                    # -4 to counteract the offset of using Rect.center for generating moves
+                    qix.updateLocation(move[0]-4, move[1]-4) 
 
-        # Qix
-        if qix:
-            qix.generateMoves() # Generates moves based on the position of Rect.center
-            moveList = []
+                qix.resetMoves()
 
-            for move in qix.possibleMoves:
-                prevX = copy.deepcopy(qix.x)
-                prevY = copy.deepcopy(qix.y)
+            board.draw()
 
-                qix.updateLocation(move[0], move[1])
-                touchingEdge = currentEdge(qix, board)
+            if board.collide():
+                collisionTime = pygame.time.get_ticks()
+                player.toggleInvincibility(True)
 
-                if touchingEdge:
-                    qix.updateLocation(prevX, prevY)
-                else:
-                    moveList.append(move)
+            if pygame.time.get_ticks() - collisionTime > 1000:
+                collisionTime = 0
+                player.toggleInvincibility(False)
 
-            if moveList:
-                move = random.choice(moveList)
-                # -4 to counteract the offset of using Rect.center for generating moves
-                qix.updateLocation(move[0]-4, move[1]-4) 
-
-            qix.resetMoves()
-
-        board.draw()
-
-        if board.collide():
-            collisionTime = pygame.time.get_ticks()
-            player.toggleInvincibility(True)
-
-        if pygame.time.get_ticks() - collisionTime > 1000:
-            collisionTime = 0
-            player.toggleInvincibility(False)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+            if player.getHealth() == 0:
                 pygame.quit()
+                break
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    gameLoop = False
+                    pygame.quit()
+
+        gui.set_user_score(board.score)
+        
+        if not gui.render_game_over_screen():
+            uiLoop = False
+            break
+
+       
+def limitVectorDirection(vector):
+    """
+    Converts a vector to (+-1,0), (0,+-1), or (0,0).
+        Assumption: The input vector consists of two numerical elements.
+        Returns: A tuple in the form: (val, val)
+    """
+    if abs(vector[0]) == 1:
+        return (math.copysign(1, vector[0]), 0)
+    elif abs(vector[1]) == 1:
+        return (0, math.copysign(1, vector[1]))
+    
+    return (0,0)
 
         # for event in pygame.event.get(): # Check for quit event (closing window)
         #     if event.type == pygame.QUIT:

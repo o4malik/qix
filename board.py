@@ -53,6 +53,9 @@ class Board():
         self.edges = []             # Contains coordinates of all traversal space
         self.edgesBuffer = []       # Contains edges on Current push
         self.entities = []          # Contains all boardObjects in play
+
+        self.score = 0             # Percent of the board captured
+
         self.firstEdgeBuffer = None
         self.edgesBuffer = None   # Contains a linked list reference on the current push
         # self.playableAreaPolygon = None # Contains Polygon object representing player's non-push movable area. Polygon is useful for calculating area and determining 'insideness' for collisions
@@ -70,7 +73,7 @@ class Board():
         
         pygame.display.init()
         pygame.display.set_caption('QIX')
-        self.mysurface = pygame.display.set_mode((1280, 800), pygame.RESIZABLE)
+        self.mysurface = pygame.display.set_mode((1280, 800))
         self.resized = pygame.transform.scale(self.mysurface, (160, 100))
         
         self.playableAreaPolygon = self.remakePlayableArea()
@@ -112,7 +115,16 @@ class Board():
             qix = Qix(80, 50)
             self.entities.append(qix)
 
-        return
+        return self.initializeFonts()
+
+    def initializeFonts(self):  # Putting this inside the constructor will crash pygame on restart attempts
+        pygame.font.init()
+        self.header = pygame.font.SysFont('Terminal', 60)
+        self.healthText = self.header.render('HP:', True, pygame.Color('white'))
+        self.scoreText = self.header.render('Captured:', True, pygame.Color('white'))
+
+        self.scorePercent = pygame.font.SysFont('Terminal', 100)
+        self.scorePercentText = self.scorePercent.render(str(self.score) + "%", True, pygame.Color('white'))
 
     def updateEdges(self):
         avgX = 0
@@ -191,9 +203,12 @@ class Board():
         return False
     
 
-    def printPercentage(self):  # 50% of board must be captured to win
-        result = ((len(self.edges) +len(self.captured)) / len(self.mainBoard)) * 100
-        print("{:.1f}% of the Board is Captured".format(result))
+    def updateScore(self, score):  # 50% of board must be captured to win
+        self.score = score
+        return self.setScoreText()
+    
+    def setScoreText(self):
+        self.scorePercentText = self.header.render(str(self.score) + "%", True, pygame.Color('white'))
         return
 
     def getMarker(self):
@@ -259,6 +274,11 @@ class Board():
             entity.draw(self.resized)
 
         self.mysurface.blit(pygame.transform.scale(self.resized, self.mysurface.get_rect().size), (0,0)) 
+        self.getMarker().drawHealth(self.mysurface)
+
+        self.mysurface.blit(self.healthText, (50,50))
+        self.mysurface.blit(self.scoreText, (1035,50))
+        self.mysurface.blit(self.scorePercentText, (1035,100))
 
         pygame.display.flip()
 
