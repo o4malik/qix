@@ -54,7 +54,7 @@ def main():
         keys = pygame.key.get_pressed()
         moveVector = (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT], keys[pygame.K_DOWN] - keys[pygame.K_UP])
         moveVector = limitVectorDirection(moveVector)
-        touchingEdge = None # Start from no touchingEdge
+        touchingEdge = None # Touching edge may be "current edge" (when not incursing) or the current edge during an incursion. Start from no touchingEdge
         
         # If nothing is being pressed, ignore the code
         if not moveVector == (0,0) and not keys[pygame.K_SPACE]:
@@ -80,7 +80,7 @@ def main():
 
         if keys[pygame.K_SPACE]:
             # If the player is currently touching the edge while doing an incursion, and if the stored incursion is of length 1, initialise the environment
-            # If the player is not currently incurring, initialise the environment
+            # If the player is not currently incurring, initialise the environment variables for the incursion
             if currentEdge(player, board) and player.isPushing() and board.edgesBuffer == board.firstEdgeBuffer\
                 or not player.isPushing():
                 player.setIsPushing(True)
@@ -178,6 +178,9 @@ def main():
         #         pygame.quit()
         #     if event == VIDEORESIZE: # Check for resize
         #         mysurface = pygame.display.set_mode((event.w,event.h), pygame.RESIZABLE)
+
+
+
 def currentEdge(obj, board:Board):
     """
     Finds an edge that corresponds to the players current position.
@@ -207,7 +210,7 @@ def handleIncursion(player, board, moveVector, previousMoveVector, startingIncur
     newPositionIsContainedInArea = board.playableAreaPolygon.contains(newPlayerPos)
     newPositionIsTouchingArea = board.playableAreaPolygon.touches(newPlayerPos)
 
-    # If the player is attempint to move into an invalid section, stop the incursion
+    # If the player is attemping to push into an invalid section (i.e. outside the walkable edges), stop the incursion
     if not newPositionIsContainedInArea and not newPositionIsTouchingArea:
         board.getMarker().setIsPushing(False)
         previousMoveVector = None
@@ -259,6 +262,8 @@ def handleIncursion(player, board, moveVector, previousMoveVector, startingIncur
             board.playableAreaPolygon = board.remakePlayableArea()
             print("Captured Area: ", int(round(100 - 100 * board.playableAreaPolygon.area / board.startingAreaPolygon.area)), "%")
 
+# This is a case in which the player begins and ends an incursion on two different edges
+# Note that an edges directional type denotes the direction in which the edge is drawn, e.g. the game's starting left wall is drawn "downwards"
 def handleCrossEdgeIncursion(touchingEdge, startingIncurringEdge, edge, board):
     touchingEdgeDirection = touchingEdge.getDirection()
     startingEdgeDirection = startingIncurringEdge.getDirection()
@@ -317,8 +322,9 @@ def handleCrossEdgeIncursion(touchingEdge, startingIncurringEdge, edge, board):
         touchingEdge.next = board.firstEdgeBuffer
         oldFirstEdge.next = startingIncurringEdge
 
+# This is the case where the player begins an incursion coming from a given edge, then finishes the incursion upon the same edge
+# Note again that "downward" denotes the direction in which the edge is drawn, e.g. the game's starting left wall is drawn downward
 def handleSameEdgeIncursion(touchingEdge, edge, board):
-    downwardEdge = touchingEdge.start[1] < touchingEdge.end[1]
     upwardEdge = touchingEdge.start[1] > touchingEdge.end[1]
     rightwardEdge = touchingEdge.start[0] < touchingEdge.end[0]
     leftwardEdge = touchingEdge.start[0] > touchingEdge.end[0]
