@@ -31,6 +31,8 @@ class Object():
         self.possibleMoves = []
 
 
+
+
 class Marker(Object):
     def __init__(self, xPos, yPos, health, pushState):
         super().__init__(xPos, yPos)
@@ -40,6 +42,15 @@ class Marker(Object):
         self.invincibility = False
 
         self.colour = pygame.Color(0,204,0) # Green
+
+    def move():
+        if isPushing():
+            movePushing()
+        else:
+            moveNotPushing()
+
+    def moveNotPushing(self):
+        pass
 
     def updateLocation(self, x, y):
         super().updateLocation(x, y)
