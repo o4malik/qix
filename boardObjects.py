@@ -31,13 +31,12 @@ class Object():
         self.possibleMoves = []
 
 
-
-
 class Marker(Object):
     def __init__(self, xPos, yPos, health, pushState):
         super().__init__(xPos, yPos)
 
         self.health = health
+        self.maxHealth = health
         self.pushState = pushState
         self.invincibility = False
 
@@ -51,7 +50,7 @@ class Marker(Object):
 
     def moveNotPushing(self):
         pass
-
+    
     def updateLocation(self, x, y):
         super().updateLocation(x, y)
 
@@ -70,6 +69,18 @@ class Marker(Object):
 
     def updateHealth(self):
         self.health -= 1
+
+    def drawHealth(self, screen):
+        iter = 0    
+
+        for i in range(self.maxHealth):
+            if i < self.health:
+                pygame.draw.rect(screen, pygame.Color(0,200,0), pygame.Rect(50+iter,100,35,70))
+                pygame.draw.rect(screen, pygame.Color(0,255,0), pygame.Rect(52+iter,102,31,66))
+            else:
+                pygame.draw.rect(screen, pygame.Color(200,0,0), pygame.Rect(50+iter,100,35,70))
+                pygame.draw.rect(screen, pygame.Color(255,0,0), pygame.Rect(52+iter,102,31,66))
+            iter += 40
 
     def isInvincible(self):
         return self.invincibility
